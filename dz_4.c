@@ -2,25 +2,31 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
-int check_symmetry(int** matrix, int N); //проверяет, симметричную лиматрицу мы ввели
-void create_graphviz(int** matrix, int N); //создает файл graphviz в папке с этимфайлом с названием new_graph.dot
-void sort_top(int** matrix, int N); //сортирует в порядке убывания вершины счетными степенями
+#define MIN_SIZE 2000
+#define MAX_SIZE 10000
+#define STEP 25
+
+int check_symmetry(int **matrix, int N); //проверяет, симметрична ли введенная матрица
+void create_graphviz(int **matrix, int N); //создает файл graphviz в папке с этим файлом с названием new_graph.png
+void bubbleSort(int **matrix, int N); //сортирует в порядке убывания вершины счетными степенями
 //сами функции в конце программы
 
-struct Top // эта структура используется в ф-ии sort_top и хранит в себе вершину и ее степень 
+struct Top // эта структура используется в функции bubbleSort и хранит в себе вершину и ее степень 
 {
     int name_top;
     int degree_top;
 
 };
 
+
 int main(){
     int i = 0, j = 0, num = 0;
     char symbol;
     int** mass = (int**)calloc(i + 1, sizeof(int*) );
     mass[i] = (int*)calloc(i + 1, sizeof(int));
-    printf("Enter the adjacency matrix:\n");// запоняем матрицу смежности
+    printf("Enter the adjacency matrix:\n");// вводим матрицу смежности
     while ((symbol = getchar()) != '\n'){
         if ((symbol <= '9') && (symbol >= '0')){
             num = num * 10 + (int)(symbol - '0');
@@ -49,13 +55,55 @@ int main(){
         return 0;
     }
     create_graphviz(mass, size); // создаем файл в graphviz
-    sort_top(mass, size); // сортируем вершины в порядке убывания четных степеней
+    FILE *file;
+    file=fopen("file.txt", "w"); //открытие файла для записи в него
+    int length, start;
+    float timeBubble;
+    for(length=MIN_SIZE; length<=MAX_SIZE; length+=STEP){ //рассматривание работу алгоритмов для массивов длиной от MIN_SIZE до MAX_SIZE
+        int *massBubble=malloc(sizeof(int)*length); //выделение памяти под массив, который будет отсортирован сортировкой пузырьком
+        generation(massBubble, length);
+
+        start=clock();
+        bubbleSort(massBubble, length); //сортировка массива пузырьком, в переменную timeBubble заносится время работы алгоритма
+        timeBubble=(clock()-start)*1.0/CLOCKS_PER_SEC;
+
+
+        generation(massBubble, length);
+
+        start=clock();
+        bubbleSort(massBubble, length); //сортировка массива пузырьком, в переменную timeBubble заносится время работы алгоритма
+        timeBubble=timeBubble+(clock()-start)*1.0/CLOCKS_PER_SEC;
+
+
+
+        generation(massBubble, length);
+
+        start=clock();
+        bubbleSort(massBubble, length);
+        timeBubble=(timeBubble+(clock()-start)*1.0/CLOCKS_PER_SEC)/3;
+
+
+
+        fprintf(file, "%d %f\n", length, timeBubble); //запись полученных данных в файл
+        free(massBubble); //высвобождение выделенной для массива памяти
+        
+    }
+    fclose(file); //закрытие файла
+    bubbleSort(mass, size); // сортируем вершины в порядке убывания четных степеней
     for (int i = 0; i < size; i++) { // очищаем за собой динамическую память
         free(mass[i]);
     }
-    free(mass);
-    return 0;
+    free(mass);    
 }
+
+void generation(int *array, int len){ //функция, заполняющая два переданных массива, рандомными, но одинаковыми числами
+    int i, g;
+    for(i=0; i<len; i++){
+        g=rand()%201;
+        array[i]=g;
+    }
+}
+
 
 int check_symmetry(int** matrix, int N){ // Функция проверки на симметричность нашей матрицы
     for (int i = 0; i < N; i++){
@@ -82,7 +130,7 @@ void create_graphviz(int** matrix, int N){
     fclose(file_graph); //закрываем файл
 }
 
-void sort_top(int** matrix, int N){
+void bubbleSort(int** matrix, int N){
     int size_array = 0;
     struct Top* array = (struct Top*)calloc(size_array + 1, sizeof(struct Top)); // создаем динамический массив структуры Top
     for (int i = 0; i < N; i++) { // заполняем динамический массив структуры Top 
